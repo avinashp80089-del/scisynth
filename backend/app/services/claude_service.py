@@ -1,9 +1,9 @@
 from __future__ import annotations
 import json
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, cast
 
 import anthropic
-from anthropic.types import TextBlock, TextBlockParam
+from anthropic.types import MessageParam, TextBlock, TextBlockParam
 
 from app.config import get_settings
 
@@ -123,9 +123,10 @@ async def stream_chat(
         f"[{p['title']}]\n{p['abstract']}" for p in context_papers
     )
 
-    messages = [
-        {"role": m["role"], "content": m["content"]} for m in history
-    ]
+    messages: list[MessageParam] = cast(
+        list[MessageParam],
+        [{"role": m["role"], "content": m["content"]} for m in history],
+    )
     messages.append(
         {
             "role": "user",
