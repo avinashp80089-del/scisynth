@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: scisynth-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/scisynth.db
+    disk:
+      name: scisynth-db
+      mountPath: /var/data
+      sizeGB: 1
