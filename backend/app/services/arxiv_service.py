@@ -27,11 +27,11 @@ def _parse_entry(entry: ET.Element) -> dict:
     raw_id = text("id")
     arxiv_id = _strip_version(raw_id)
 
-    authors = [
-        (a.find("atom:name", _NS).text or "").strip()
-        for a in entry.findall("atom:author", _NS)
-        if a.find("atom:name", _NS) is not None
-    ]
+    authors: list[str] = []
+    for a in entry.findall("atom:author", _NS):
+        name_el = a.find("atom:name", _NS)
+        if name_el is not None:
+            authors.append((name_el.text or "").strip())
 
     categories = [
         el.get("term", "")
@@ -60,7 +60,7 @@ def _parse_entry(entry: ET.Element) -> dict:
 
 async def search_arxiv(query: str, max_results: int | None = None) -> list[dict]:
     limit = max_results or _settings.max_papers_per_search
-    params = {
+    params: dict[str, str | int] = {
         "search_query": f"all:{query}",
         "start": 0,
         "max_results": limit,
@@ -78,7 +78,7 @@ async def search_arxiv(query: str, max_results: int | None = None) -> list[dict]
 
 async def fetch_paper_by_id(arxiv_id: str) -> dict | None:
     clean_id = _strip_version(arxiv_id)
-    params = {"id_list": clean_id, "max_results": 1}
+    params: dict[str, str | int] = {"id_list": clean_id, "max_results": 1}
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(_settings.arxiv_base_url, params=params)
         response.raise_for_status()

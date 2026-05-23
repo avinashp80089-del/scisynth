@@ -3,6 +3,7 @@ import json
 from typing import AsyncGenerator, Optional
 
 import anthropic
+from anthropic.types import TextBlock, TextBlockParam
 
 from app.config import get_settings
 
@@ -34,8 +35,9 @@ def _get_client() -> anthropic.AsyncAnthropic:
     return _client
 
 
-def _cached_system() -> list[dict]:
-    return [{"type": "text", "text": _SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}]
+def _cached_system() -> list[TextBlockParam]:
+    block: TextBlockParam = {"type": "text", "text": _SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}  # type: ignore[typeddict-extra-items]
+    return [block]
 
 
 async def analyze_paper(title: str, abstract: str) -> dict:
@@ -60,8 +62,10 @@ async def analyze_paper(title: str, abstract: str) -> dict:
         messages=[{"role": "user", "content": prompt}],
     )
 
-    raw = response.content[0].text.strip()
-    # Strip markdown fences if present
+    block = response.content[0]
+    if not isinstance(block, TextBlock):
+        raise ValueError(f"Unexpected response block type: {type(block)}")
+    raw = block.text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
@@ -164,7 +168,10 @@ async def generate_hypotheses(papers: list[dict]) -> list[str]:
         messages=[{"role": "user", "content": prompt}],
     )
 
-    raw = response.content[0].text.strip()
+    block = response.content[0]
+    if not isinstance(block, TextBlock):
+        raise ValueError(f"Unexpected response block type: {type(block)}")
+    raw = block.text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):

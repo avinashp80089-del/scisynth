@@ -15,7 +15,7 @@ async def analyze_paper(paper_id: str):
         raise HTTPException(status_code=404, detail="Paper not in library")
 
     existing = await db.fetch_analysis(paper_id)
-    if existing:
+    if existing is not None:
         return AnalysisResponse(
             paper_id=paper_id,
             analysis=PaperAnalysis(**existing),
@@ -26,6 +26,7 @@ async def analyze_paper(paper_id: str):
     await db.insert_analysis(paper_id, result)
 
     saved = await db.fetch_analysis(paper_id)
+    assert saved is not None, "analysis row missing immediately after insert"
     return AnalysisResponse(
         paper_id=paper_id,
         analysis=PaperAnalysis(**saved),
